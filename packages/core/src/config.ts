@@ -3,7 +3,7 @@
  */
 
 import dotenv from 'dotenv';
-import { existsSync } from 'fs';
+import { existsSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { logger } from './utils/logger.js';
 import type { Config } from './types.js';
@@ -34,12 +34,35 @@ export function loadConfig(): Config {
     }
   }
 
-  // Spec file location
-  const specFile = join(process.cwd(), 'spec.html');
-  if (!existsSync(specFile)) {
-    logger.error('spec.html not found in current directory');
-    logger.info('Create a spec.html file to get started');
-    process.exit(1);
+  // Spec file location - look for .cdml files
+  // Check if user specified a file via CLI argument
+  const cliFile = process.argv[2];
+  let specFile: string;
+
+  if (cliFile) {
+    specFile = join(process.cwd(), cliFile);
+    if (!existsSync(specFile)) {
+      logger.error(`File not found: ${cliFile}`);
+      process.exit(1);
+    }
+  } else {
+    // Look for .cdml files in current directory
+    const files = readdirSync(process.cwd());
+    const cdmlFiles = files.filter(f => f.endsWith('.cdml'));
+
+    if (cdmlFiles.length === 0) {
+      logger.error('No .cdml files found in current directory');
+      logger.info('Create a .cdml file to get started (e.g., app.cdml)');
+      logger.info('Example: <app><button gen>Make a blue button</button></app>');
+      process.exit(1);
+    }
+
+    if (cdmlFiles.length > 1) {
+      logger.warn(`Multiple .cdml files found: ${cdmlFiles.join(', ')}`);
+      logger.info(`Using ${cdmlFiles[0]} (specify file as argument to use a different one)`);
+    }
+
+    specFile = join(process.cwd(), cdmlFiles[0]);
   }
 
   // Configuration values

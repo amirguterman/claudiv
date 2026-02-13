@@ -1,11 +1,11 @@
 {
-  // XML Language Support for Attribute-Based Syntax
+  // XML Language Support for Attribute-Based Syntax (.cdml files)
   "xml.validation.enabled": true,
   "xml.validation.schema.enabled": "always",
   "xml.fileAssociations": [
     {
-      "pattern": "**/spec.html",
-      "systemId": "spec.xsd"
+      "pattern": "**/*.cdml",
+      "systemId": "packages/core/claudiv.xsd"
     }
   ],
 
@@ -29,11 +29,9 @@
     "editor.formatOnSave": false
   },
 
-  // Files to treat as XML
+  // Files to treat as XML (.cdml extension)
   "files.associations": {
-    "spec.html": "xml",
-    "*.spec.html": "xml",
-    "new-syntax-examples.html": "xml"
+    "*.cdml": "xml"
   },
 
   // Emmet for XML-like tags (enables quick tag creation)

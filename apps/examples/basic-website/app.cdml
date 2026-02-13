@@ -1,0 +1,84 @@
+<website name="food gallery">
+    <nav-menu docking="left" pages=""></nav-menu>
+    <styling themecolor="dark light system" timer="changing random colours every 1s">
+        <ai>
+            <changes>
+                Added a timer that changes theme accent colors randomly every 1 second while preserving the
+                dark/light/system theme switching functionality
+            </changes>
+            <details>
+                <timer>
+                    Implemented a 1-second interval timer that generates random HSL colors and updates CSS custom
+                    properties for accent-related variables
+                </timer>
+                <themecolor>
+                    Preserved existing dark, light, and system theme switching with all three modes intact
+                </themecolor>
+                <color-targets>
+                    The timer updates --accent, --accent-hover, --accent-soft, and --star-color variables dynamically
+                </color-targets>
+            </details>
+            <summary>Added random color cycling every 1 second on top of the existing theme system</summary>
+
+            → Implementation in spec.code.html
+        </ai>
+    </styling>
+    <pages>
+        <home type="common home with testimonials" testimonials="count is 4"></home>
+        <gallery>
+            <image click="open api named api-x"></image>
+        </gallery>
+        <api-x domain="localhost:30005">
+            <image-click open="{domain}/{image id}"></image-click>
+        </api-x>
+        <ai>
+            <changes>
+                Added image click functionality to gallery items that opens images via api-x endpoint at localhost:30005
+            </changes>
+            <details>
+                <home>Preserved existing home page with hero, features, and 4 testimonials exactly as-is</home>
+                <gallery>Modified gallery to add click handler on each image that opens the api-x endpoint</gallery>
+                <api-x>
+                    Implemented api-x integration - clicking a gallery image opens localhost:30005/{image-id} in a new
+                    tab
+                </api-x>
+                <image-click>
+                    Each gallery item generates a unique image ID from the item title and navigates to the API endpoint
+                    on click
+                </image-click>
+            </details>
+            <summary>
+                Gallery images now open via api-x at localhost:30005/{image-id} when clicked. Image IDs are generated as
+                URL-friendly slugs from the food item titles (e.g., "truffle-risotto", "caprese-bruschetta"). All
+                existing functionality including home page, testimonials, nav, theme switching, and gallery filtering is
+                preserved.
+            </summary>
+
+            → Implementation in spec.code.html
+        </ai>
+    </pages>
+    <ai>
+        <changes>
+            Created a complete food gallery website with dark/light/system theme support, left-docked navigation menu,
+            home page with testimonials, and gallery page
+        </changes>
+
+        <details>
+            <nav-menu>Left-docked navigation with smooth slide-out behavior, links to Home and Gallery pages</nav-menu>
+            <styling>
+                Dark, light, and system theme support using CSS custom properties and prefers-color-scheme media query
+            </styling>
+            <home-page>Hero section, features/about section, and 4 testimonial cards with ratings</home-page>
+            <gallery-page>
+                &gt; Responsive masonry-style food image gallery with hover effects and category filters
+            </gallery-page>
+        </details>
+
+        <summary>
+            Full single-page food gallery website with theme switching, left-docked nav, home with testimonials, and a
+            filterable gallery
+        </summary>
+
+        → Implementation in spec.code.html
+    </ai>
+</website>

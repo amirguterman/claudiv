@@ -15,7 +15,7 @@ export interface HierarchyContext {
   scopes: ScopeContext[];
   previousMessages: ChatMessage[];
   referencedElements: ReferencedElement[];
-  existingCode?: string; // Current implementation from spec.code.html
+  existingCode?: string; // Current implementation from generated HTML
 }
 
 export interface ScopeContext {

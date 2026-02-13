@@ -31,15 +31,15 @@ async function main() {
   // Verify Claude is available
   await verifyClaudeAvailable(claudeClient, config.mode);
 
-  // Regenerate spec.code.html if missing or requested
-  const codeFilePath = config.specFile.replace('.html', '.code.html');
+  // Regenerate code file if missing or requested
+  const codeFilePath = config.specFile.replace('.cdml', '.html');
   if (!existsSync(codeFilePath)) {
-    logger.info('spec.code.html not found, regenerating from conversation history...');
+    logger.info('Generated code file not found, regenerating from conversation history...');
     try {
       await regenerateCodeFromConversation(config.specFile);
     } catch (error) {
       const err = error as Error;
-      logger.warn(`Could not regenerate spec.code.html: ${err.message}`);
+      logger.warn(`Could not regenerate code file: ${err.message}`);
     }
   }
 
@@ -62,7 +62,7 @@ async function main() {
   // Start watching
   watcher.start();
 
-  logger.success('✓ Watching spec.html for changes...');
+  logger.success(`✓ Watching ${config.specFile.split('/').pop()} for changes...`);
   logger.info('💡 Tip: Add gen/retry/undo attribute to any element to trigger AI');
   logger.info('💡 Example: <create-button gen>Make a blue button</create-button>');
   logger.info('💡 Example: <my-button color="blue" size="large" gen />');
@@ -86,7 +86,7 @@ async function main() {
 }
 
 /**
- * Process spec.html file for chat patterns
+ * Process .cdml file for chat patterns
  */
 async function processSpecFile(
   filePath: string,
@@ -100,7 +100,7 @@ async function processSpecFile(
     return;
   }
 
-  logger.processing('Processing spec.html...');
+  logger.processing(`Processing ${filePath.split('/').pop()}...`);
 
   // Read file content
   const content = await readFile(filePath, 'utf-8');
