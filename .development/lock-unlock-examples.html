@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<examples xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../spec.xsd">
+
+  <!--
+    KEY CONCEPTS:
+
+    1. lock/unlock control CHILD ELEMENTS (not the element itself)
+    2. lock/unlock can COEXIST with gen/retry/undo on the SAME element
+
+    PATTERNS:
+
+    <element gen="">              - Regenerate element and all children
+    <element gen="">
+      <child lock="">...</child>  - Regenerate element but lock this child
+
+    <element lock="" gen="">      - lock on same element as gen: locks all children by default
+      <child unlock="">...</child> - unlock overrides parent lock
+
+    <element unlock="" retry="">  - unlock and retry coexist on same element
+  -->
+
+  <!-- Example 1: Lock specific child component -->
+  <example name="Lock Navigation, Regenerate Content">
+    <description>
+      Lock the navigation child (it's already perfect), but regenerate the main content child.
+    </description>
+
+    <before-regeneration>
+      <app gen="">
+        <nav-menu lock="">
+          <!-- lock="" on child prevents this child from being regenerated -->
+          <ai>Previous implementation...</ai>
+        </nav-menu>
+        <main-content>
+          Make the content area have a card-based layout with 3 columns
+        </main-content>
+      </app>
+    </before-regeneration>
+
+    <expected-behavior>
+      - nav-menu has lock="" so it's preserved
+      - main-content has no lock, so it's regenerated
+    </expected-behavior>
+  </example>
+
+  <!-- Example 2: Lock with gen on same element -->
+  <example name="Lock All Children, Then Unlock One">
+    <description>
+      Use lock="" WITH gen="" on parent to lock all children by default, then unlock specific child.
+    </description>
+
+    <before-regeneration>
+      <website lock="" gen="">
+        <!-- lock="" on element with gen="" locks ALL children -->
+        <header>
+          <ai>Header implementation...</ai>
+        </header>
+        <nav-menu unlock="">
+          <!-- unlock="" overrides parent lock - this will be regenerated -->
+          Update navigation with new menu items
+        </nav-menu>
+        <footer>
+          <ai>Footer implementation...</ai>
+        </footer>
+      </website>
+    </before-regeneration>
+
+    <expected-behavior>
+      - lock="" and gen="" coexist on same element
+      - header is locked (by parent's lock)
+      - nav-menu is regenerated (has unlock)
+      - footer is locked (by parent's lock)
+    </expected-behavior>
+  </example>
+
+  <!-- Example 3: Retry with unlock -->
+  <example name="Retry with Selective Unlock">
+    <description>
+      Use retry="" with unlock="" on same element to retry generation but only for this element.
+    </description>
+
+    <before-regeneration>
+      <website lock="">
+        <!-- Parent is locked -->
+        <header>
+          <ai>Header implementation...</ai>
+        </header>
+        <nav-menu unlock="" retry="">
+          <!-- unlock="" and retry="" coexist on same element -->
+          Retry the navigation with better styling
+          <ai>Previous nav implementation...</ai>
+        </nav-menu>
+        <footer>
+          <ai>Footer implementation...</ai>
+        </footer>
+      </website>
+    </before-regeneration>
+
+    <expected-behavior>
+      - unlock="" and retry="" coexist on nav-menu
+      - nav-menu is regenerated (has unlock and retry)
+      - header and footer are preserved (locked by parent)
+    </expected-behavior>
+  </example>
+
+  <!-- Example 4: Nested lock/unlock -->
+  <example name="Complex Nested Lock/Unlock">
+    <description>
+      Lock dashboard but unlock specific widgets within.
+    </description>
+
+    <before-regeneration>
+      <app gen="">
+        <dashboard lock="">
+          <header>
+            <ai>Dashboard header...</ai>
+          </header>
+          <widgets>
+            <stats-widget unlock="">
+              Update the stats widget with pie charts instead of bar charts
+            </stats-widget>
+            <activity-widget>
+              <ai>Activity feed widget...</ai>
+            </activity-widget>
+            <tasks-widget>
+              <ai>Tasks list widget...</ai>
+            </tasks-widget>
+          </widgets>
+          <footer>
+            <ai>Dashboard footer...</ai>
+          </footer>
+        </dashboard>
+      </app>
+    </before-regeneration>
+
+    <expected-behavior>
+      - AI preserves dashboard structure (locked)
+      - AI preserves header (locked by parent)
+      - AI regenerates stats-widget (unlocked)
+      - AI preserves activity-widget (locked by parent)
+      - AI preserves tasks-widget (locked by parent)
+      - AI preserves footer (locked by parent)
+    </expected-behavior>
+  </example>
+
+  <!-- Example 5: Iterative development pattern -->
+  <example name="Iterative Lock Pattern">
+    <description>
+      Start with full generation, then progressively lock working parts.
+    </description>
+
+    <iteration-1>
+      <website gen="">
+        <header>Create a modern header</header>
+        <nav>Create sidebar navigation</nav>
+        <content>Create main content area</content>
+      </website>
+    </iteration-1>
+
+    <iteration-2 comment="Header looks good, lock it">
+      <website retry="">
+        <header lock="">
+          <ai>Previous header implementation...</ai>
+        </header>
+        <nav>Improve navigation styling</nav>
+        <content>Improve content layout</content>
+      </website>
+    </iteration-2>
+
+    <iteration-3 comment="Header and nav are perfect, lock both">
+      <website retry="">
+        <header lock="">
+          <ai>Header implementation...</ai>
+        </header>
+        <nav lock="">
+          <ai>Navigation implementation...</ai>
+        </nav>
+        <content>Add card grid layout to content</content>
+      </website>
+    </iteration-3>
+  </example>
+
+  <!-- Example 6: Lock with new theme -->
+  <example name="Update Theme, Preserve Structure">
+    <description>
+      Change theme colors but preserve all component implementations.
+    </description>
+
+    <before-regeneration>
+      <app theme="dark" colors="purple-scheme" gen="">
+        <header lock="">
+          <ai>Header with light theme...</ai>
+        </header>
+        <sidebar lock="">
+          <ai>Sidebar with light theme...</ai>
+        </sidebar>
+        <content lock="">
+          <ai>Content with light theme...</ai>
+        </content>
+      </app>
+    </before-regeneration>
+
+    <expected-behavior>
+      - AI updates global theme CSS variables for dark mode and purple scheme
+      - AI preserves all component HTML structure (everything locked)
+      - Components inherit new theme via CSS variables
+    </expected-behavior>
+  </example>
+
+</examples>

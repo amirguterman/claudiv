@@ -1,0 +1,89 @@
+<chat>
+    <modify>...</modify>
+    <ai>...</ai>
+    <modify>...</modify>
+    <ai>...</ai>
+    <modify>...</modify>
+    <ai>...</ai>
+    <undo/> <!-- should undo last change and remove last <ai></ai> message. should keep a folder of changes after each ai change as checkpoints. folder name `.changelog` and should include all generated files in folder for each change with a timestamp and a slug `20260212134905-<slug-name-of-change>` should not remove the change from history but add a change to the history of the undoing --> 
+</chat>
+
+<chat>
+    <modify>...</modify>
+    <ai>...</ai>
+    <undo> <!-- should undo only the change before it -->
+    <modify>...</modify>
+    <ai>...</ai>
+    <undo> <!-- should undo the changes inside it -->
+        <modify>...</modify>
+        <ai>...</ai>
+        <modify>...</modify>
+        <ai>...</ai>
+    </undo>
+    <modify>...</modify>
+    <ai>...</ai>
+</chat>
+
+<chat>
+    <modify>...</modify>
+    <ai>...</ai>
+    <retry /> <!-- similar to the undo -->
+    <modify>...</modify>
+    <ai>...</ai>
+    <modify>...</modify>
+    <retry> <!-- similar to the undo -->
+        <ai>...</ai>
+        <modify>...</modify>
+        <ai>...</ai>
+        <modify>...</modify>
+    </retry>
+    <ai>...</ai>
+    <retry/> <!-- should retry last change. should keep a folder of changes after each ai change as checkpoints. folder name `.changelog` and should include all generated files in folder for each change with a timestamp and a slug `20260212134905-<slug-name-of-change>` should not remove the change from history but add a change to the history of the retrying -->
+</chat>
+
+<chat>
+    <modify>...</modify>
+    <ai model="claude-opus-4-6">...</ai> <!-- specify model -->
+</chat>
+
+<chat>
+    <modify>...</modify>
+    <ai ref="<url>">...</ai> <!-- ref url -->
+    <ai>
+        <ref>
+            http://example.com/article.html
+            /path/to/file
+            /path/to/files*pattern.*
+        </ref>
+    </ai> <!-- ref url -->
+</chat>
+
+also every generation must always format it with proper indentation
+
+
+
+
+<!-- instead of this format-->
+<chat>
+     <ai>I've created a simple HTML file with a blue button that includes:
+- A blue background color (#007bff)
+- White text displaying "Click Me"
+- Padding and rounded corners for a modern look
+- A hover effect that darkens the button when you mouse over it
+
+The button is styled with CSS and ready to use in your app.</ai>
+</chat>
+
+<!-- use this format -->
+<chat>
+     <ai>
+        <changes>I've created a simple HTML file with a blue button that includes</changes>
+        <styling>
+            <background>A blue background color (#007bff)</background>
+            <font-color>White text displaying "Click Me"</font-color>
+            <padding>Padding and rounded corners for a modern look</padding>
+            <effect>A hover effect that darkens the button when you mouse over it</effect>
+        </styling>
+        <summary>The button is styled with CSS and ready to use in your app.</summary>
+    </ai>
+</chat>

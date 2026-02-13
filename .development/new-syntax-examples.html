@@ -1,0 +1,96 @@
+<!-- NEW ATTRIBUTE-BASED SYNTAX EXAMPLES -->
+
+<!-- Example 1: Simple generation with content -->
+<create-button gen>Make a simple blue button with text "Click Me"</create-button>
+
+<!-- After processing, becomes: -->
+<create-button>Make a simple blue button with text "Click Me"
+  <ai>
+    <changes>Created a simple blue button</changes>
+    <details>
+      <styling>Applied blue background with white text</styling>
+      <padding>Added comfortable padding for easy clicking</padding>
+    </details>
+    <summary>Button component created successfully</summary>
+  </ai>
+</create-button>
+
+
+<!-- Example 2: Attribute-based specification (no content needed) -->
+<my-button
+  title="get lucky number"
+  color="blue"
+  click="show a message"
+  message="the lucky number is {random(0 to 100)}"
+  effect="fades when hovers"
+  gen />
+
+<!-- After processing, becomes: -->
+<my-button
+  title="get lucky number"
+  color="blue"
+  click="show a message"
+  message="the lucky number is {random(0 to 100)}"
+  effect="fades when hovers">
+  <ai>
+    <changes>Created interactive button with random number generator</changes>
+    <details>
+      <button-element>Created button with blue background</button-element>
+      <click-handler>Added click event that displays random number message</click-handler>
+      <fade-effect>Implemented CSS fade transition on hover</fade-effect>
+    </details>
+  </ai>
+</my-button>
+
+
+<!-- Example 3: Mixed content and attributes -->
+<login-form username="email" password="required" gen>
+  Add validation and error messages for both fields
+  <submit>POST to /api/login</submit>
+  <redirect>Dashboard on success</redirect>
+</login-form>
+
+
+<!-- Example 4: Retry - regenerate with same spec -->
+<my-button color="blue" size="large" retry>
+  Make a button (will regenerate the AI response)
+  <ai>Previous response will be replaced...</ai>
+</my-button>
+
+
+<!-- Example 5: Undo - revert to previous state -->
+<my-button color="blue" size="large" undo>
+  Make a button
+  <ai>This will be replaced with undo message and code reverted</ai>
+</my-button>
+
+
+<!-- Example 6: Nested elements and attributes -->
+<feature-panel title="User Dashboard" theme="dark" gen>
+  Create a dashboard panel with:
+  <stats>Show user statistics (posts, followers, likes)</stats>
+  <chart>Line chart of activity over time</chart>
+  <actions>Quick action buttons for common tasks</actions>
+</feature-panel>
+
+
+<!-- Example 7: Any tag name works (semantic organization) -->
+<create-responsive-navbar
+  position="sticky"
+  background="gradient-blue"
+  gen>
+  Navigation bar with logo on left, menu items center, login button right
+</create-responsive-navbar>
+
+
+<!-- KEY POINTS -->
+<!--
+1. Tag names are freeform - use any name that helps you organize
+2. Tag names act as semantic headers/titles for the AI
+3. Attributes are specifications - they're part of the prompt to AI
+4. Content (text + nested elements) provides additional description
+5. gen/retry/undo attributes trigger actions
+6. Action attributes are removed after processing
+7. AI responses are added as <ai> children
+8. No <chat> wrapper needed anymore!
+-->
