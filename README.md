@@ -167,23 +167,13 @@ Use `style` or any attribute to reference other components:
 
 ## Installation
 
-**From GitHub Packages:**
-
 ```bash
-# Configure npm to use GitHub Packages for @amirguterman scope
-echo "@amirguterman:registry=https://npm.pkg.github.com" >> ~/.npmrc
-
 # Install globally
-npm install -g @amirguterman/claudiv
+npm install -g @claudiv/cli
 
 # Or run directly with npx (no install needed)
-npx @amirguterman/claudiv
+npx @claudiv/cli
 ```
-
-> **Note:** GitHub Packages requires authentication. Create a [personal access token](https://github.com/settings/tokens) with `read:packages` scope, then:
-> ```bash
-> npm login --registry=https://npm.pkg.github.com --scope=@amirguterman
-> ```
 
 **Requirements:**
 - Node.js 20+
@@ -194,8 +184,8 @@ npx @amirguterman/claudiv
 ### Quick Start (Empty Folder)
 
 ```bash
-npx @amirguterman/claudiv new myapp
-npx @amirguterman/claudiv gen myapp
+npx @claudiv/cli new myapp
+npx @claudiv/cli gen myapp
 ```
 
 ### Commands
@@ -292,7 +282,7 @@ claudiv gen myapp -w                           # Same as above
 ```bash
 # 1. Create project in empty folder
 mkdir txt2img && cd txt2img
-npx @amirguterman/claudiv new txt2img -s '<txt2img lang="python" type="cli" gen="">
+npx @claudiv/cli new txt2img -s '<txt2img lang="python" type="cli" gen="">
   <ai provider="openai" />
   <config apikey organizationid />
   <args input="text|file, size" output="filename, format" />
@@ -755,4 +745,4 @@ MIT
 
 ## Author
 
-Amir Guterman — [GitHub](https://github.com/amirguterman)
+Amir Guterman — [GitHub](https://github.com/amirguterman) | [claudiv.org](https://claudiv.org)
