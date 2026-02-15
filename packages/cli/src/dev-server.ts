@@ -1,5 +1,5 @@
 /**
- * Vite dev server for hosting spec.code.html
+ * Vite dev server for hosting generated code
  */
 
 import { createServer, type ViteDevServer } from 'vite';
@@ -27,25 +27,26 @@ export class DevServer {
             name: 'spec-code-server',
             configureServer(server: ViteDevServer) {
               server.middlewares.use(async (req: IncomingMessage, res: ServerResponse, next: Connect.NextFunction) => {
-            // Serve spec.code.html as the root
+            // Serve generated code as the root
+            const outputFile = 'app.html'; // TODO: Make configurable
             if (req.url === '/' || req.url === '/index.html') {
-              if (existsSync('spec.code.html')) {
+              if (existsSync(outputFile)) {
                 // Read and serve the file directly
                 const { readFile } = await import('fs/promises');
-                const content = await readFile('spec.code.html', 'utf-8');
+                const content = await readFile(outputFile, 'utf-8');
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'text/html');
                 res.end(content);
                 return;
               } else {
-                // Serve a placeholder if spec.code.html doesn't exist yet
+                // Serve a placeholder if output file doesn't exist yet
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'text/html');
                 res.end(`
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Waiting for spec.code.html</title>
+  <title>Waiting for generated code</title>
   <meta http-equiv="refresh" content="2">
   <style>
     body {
@@ -82,8 +83,8 @@ export class DevServer {
 <body>
   <div class="message">
     <div class="spinner"></div>
-    <h2>Waiting for spec.code.html to be generated...</h2>
-    <p>Add a user message with an empty &lt;ai/&gt; element in spec.html to trigger code generation.</p>
+    <h2>Waiting for code generation...</h2>
+    <p>Add a <code>gen</code> attribute to elements in your .cdml file to trigger generation.</p>
   </div>
 </body>
 </html>
@@ -104,7 +105,7 @@ export class DevServer {
       this.port = this.server.config.server.port || this.port;
 
       logger.success(`🌐 Dev server running at http://localhost:${this.port}`);
-      logger.info('💡 Browser will auto-reload when spec.code.html updates');
+      logger.info('💡 Browser will auto-reload when code is regenerated');
     } catch (error) {
       const err = error as Error;
       logger.error(`Failed to start dev server: ${err.message}`);
