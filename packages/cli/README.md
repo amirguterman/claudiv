@@ -16,7 +16,7 @@
 - 🔒 **Selective Regeneration** - Lock what works, regenerate what needs improvement
 - 🔥 **Hot Reload** - See changes instantly in your browser
 - 🌳 **Hierarchical Context** - Nested structure automatically provides AI context
-- 📝 **Living Specification** - Your spec.html is the source of truth, not the generated code
+- 📝 **Living Specification** - Your `.cdml` file is the source of truth, not the generated code
 
 ## 🚀 Quick Start
 
@@ -310,7 +310,7 @@ Lock components that work, iterate on specific sections.
 See how AI implements your ideas, learn patterns and techniques.
 
 ### Living Documentation
-spec.html serves as both specification and documentation.
+Your `.cdml` file serves as both specification and documentation.
 
 ## 🛠️ Commands
 

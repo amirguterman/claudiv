@@ -1,4 +1,4 @@
-# GUI-Driven Spec - Features Summary
+# Claudiv - Features Summary
 
 ## Core Features
 
@@ -39,7 +39,7 @@ The AI automatically implements ALL nested components:
 
 Result: Complete implementation of website, nav-menu, pages, home, and gallery.
 
-### 4. Lock/Unlock System 🆕
+### 4. Lock/Unlock System
 Fine-grained control over what gets regenerated:
 
 ```xml
@@ -115,11 +115,11 @@ AI responses use semantic XML tags:
 ## Workflow
 
 ### Basic Usage
-1. Edit `spec.html` with your specifications
-2. Add `gen=""` attribute to trigger generation
+1. Edit your `.cdml` file with specifications
+2. Add `gen` attribute to trigger generation
 3. AI generates implementation
-4. Review `spec.code.html` in browser
-5. Iterate with `retry=""` or lock parts with `lock=""`
+4. Review the generated output
+5. Iterate with `retry` or lock parts with `lock`
 
 ### Iterative Development
 ```xml
@@ -145,12 +145,12 @@ AI responses use semantic XML tags:
 </dashboard>
 ```
 
-## Files Generated
+## Files
 
-- **spec.html** - Your specifications (what you edit)
-- **spec.code.html** - Generated HTML/CSS (browser-ready)
-- **spec.xsd** - XML Schema for autocomplete
-- **.vscode/settings.json** - IDE configuration
+- **`<name>.cdml`** - Your specifications (what you edit)
+- **`<name>.<ext>`** - Generated output (e.g., `app.html`, `api.py`)
+- **`claudiv.xsd`** - XML Schema for IDE autocomplete
+- **`.vscode/settings.json`** - IDE configuration
 
 ## Commands
 

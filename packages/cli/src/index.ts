@@ -295,7 +295,7 @@ async function processChatPattern(
       logger.info('Code generated but not written (--no-output mode)');
     }
 
-    // Update spec.html: remove action attribute and add <ai> child with response (watch mode only)
+    // Update .cdml file: remove action attribute and add <ai> child with response (watch mode only)
     if (watcher) {
       watcher.setUpdating(true);
       try {

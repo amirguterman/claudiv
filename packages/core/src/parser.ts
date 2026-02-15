@@ -25,10 +25,10 @@ import type {
 } from './types.js';
 
 /**
- * Parse spec.html content with extreme leniency
+ * Parse .cdml content with extreme leniency
  */
 export function parseSpecFile(content: string): ParsedSpec {
-  logger.debug('Parsing spec.html with lenient parser...');
+  logger.debug('Parsing .cdml with lenient parser...');
 
   // Use htmlparser2 - extremely lenient, handles malformed HTML/XML
   const dom = parseDocument(content, {

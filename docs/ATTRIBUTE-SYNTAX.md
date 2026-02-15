@@ -2,7 +2,7 @@
 
 ## Overview
 
-The system now uses **attributes** (`gen`, `retry`, `undo`) instead of the old `<chat>` wrapper + empty `<ai/>` pattern.
+The system uses **attributes** (`gen`, `retry`, `undo`, `lock`, `unlock`) directly on elements to trigger AI actions.
 
 ## New Syntax
 
@@ -150,62 +150,6 @@ Specifications:
 </feature>
 ```
 
-## No More `<chat>` Wrapper!
-
-Old syntax:
-```xml
-<button>
-  <chat>
-    <make-it-blue/>
-    <ai/>
-  </chat>
-</button>
-```
-
-New syntax:
-```xml
-<button gen>make it blue</button>
-```
-
-Much cleaner and more intuitive!
-
-## Files Modified
-
-### Core Implementation
-1. **src/types.ts** - Updated ChatPattern interface
-   - Added `action`, `element`, `elementName`, `specAttributes`
-   - Removed old `aiElement` field
-
-2. **src/parser.ts** - New detection logic
-   - Detects elements with `gen`/`retry`/`undo` attributes
-   - Extracts tag names as semantic headers
-   - Extracts attributes as specifications
-   - Extracts content as user message
-
-3. **src/updater.ts** - Updated response handling
-   - `updateElementWithResponse()` - removes action attribute, adds `<ai>` child
-   - Preserves all other attributes
-
-4. **src/index.ts** - Updated processing
-   - `buildFullPrompt()` - combines element name, attributes, and content
-   - Removed old `autoCreateElement` logic
-   - Updated startup tips
-
-5. **src/dev-server.ts** - Fixed TypeScript types
-   - Added proper type annotations for Vite plugin
-
-### Schema & Documentation
-6. **spec.xsd** - Updated XML Schema
-   - Added `actionAttributes` group
-   - Documented `gen`, `retry`, `undo` attributes
-   - Updated element definitions
-
-7. **.development/new-syntax-examples.html** - Usage examples
-   - Complete examples of all patterns
-   - Shows before/after states
-
-8. **ATTRIBUTE-SYNTAX.md** - This file (documentation)
-
 ## How It Works
 
 1. **User adds `gen` attribute:**
@@ -244,12 +188,10 @@ Much cleaner and more intuitive!
 
 ## Benefits
 
-✅ **Simpler** - No `<chat>` wrapper needed
-✅ **Cleaner** - Attributes are self-documenting
+✅ **Simple** - Attributes are self-documenting
 ✅ **Flexible** - Any tag name, any attributes, any content
 ✅ **Structured** - Attributes provide structured specifications
 ✅ **Semantic** - Tag names organize thinking and help AI
-✅ **Natural** - More XML-like, follows standard patterns
 
 ## Testing
 
@@ -267,10 +209,9 @@ npm run dev:cli
 npm run dev:api
 ```
 
-Test with a simple example in spec.html:
+Test with a simple `.cdml` file:
 ```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<app>
+<app target="html">
   <test-button color="purple" size="large" gen>
     Create a purple button with text "Test Button"
   </test-button>
@@ -281,7 +222,7 @@ The system will:
 1. Detect the `gen` attribute
 2. Remove it after processing
 3. Add `<ai>` child with response
-4. Generate spec.code.html with the implementation
+4. Generate the output file (e.g., `app.html` for `target="html"`)
 
 ## Next Steps
 

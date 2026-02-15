@@ -1,5 +1,5 @@
 /**
- * XML-ish updater - inserts AI responses into spec.html
+ * XML-ish updater - inserts AI responses into .cdml files
  */
 
 import { writeFile } from 'fs/promises';
@@ -66,7 +66,7 @@ export async function serializeToHTML($: CheerioAPI): Promise<string> {
 }
 
 /**
- * Write updated content back to spec.html safely
+ * Write updated content back to .cdml file safely
  */
 export async function writeSpecFile(
   filePath: string,
@@ -113,5 +113,5 @@ export async function updateSpecWithResponse(
   // Grace period to prevent circular trigger
   await sleep(500);
 
-  logger.success('Updated spec.html with AI response');
+  logger.success('Updated .cdml file with AI response');
 }

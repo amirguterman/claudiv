@@ -211,7 +211,7 @@ The AI will:
 
 ## Schema Support
 
-Both `lock` and `unlock` attributes are defined in `spec.xsd` and will show up in IDE autocomplete:
+Both `lock` and `unlock` attributes are defined in `claudiv.xsd` and will show up in IDE autocomplete:
 
 ```xml
 <element lock="">    <!-- Autocomplete available -->

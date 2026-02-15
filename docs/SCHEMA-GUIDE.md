@@ -14,9 +14,9 @@ Install the **Red Hat XML** extension:
 
 The following files enable autocomplete:
 
-- **spec.xsd** - XML Schema Definition with all available elements and attributes
+- **claudiv.xsd** - XML Schema Definition with all available elements and attributes
 - **.vscode/settings.json** - VS Code configuration for XML support
-- **spec.html** - Updated with schema reference at the top
+- Your `.cdml` file — associates with the schema for autocomplete
 
 ## Usage
 
@@ -26,7 +26,7 @@ The following files enable autocomplete:
    - Type `<` and press Ctrl+Space to see available elements
    - Suggestions include: `<app>`, `<button>`, `<component>`, `<form>`, etc.
 
-2. **Attribute Suggestions** ⭐ NEW!
+2. **Attribute Suggestions**
    - Inside an element tag, press Ctrl+Space to see available attributes
    - **Action attributes**: `gen`, `retry`, `undo` appear for ALL elements
    - Example: `<button |` → suggests `gen`, `retry`, `undo`, plus any element-specific attrs
@@ -39,7 +39,7 @@ The following files enable autocomplete:
    - Red squiggly lines show schema validation errors
    - Helps catch typos and structural issues
 
-### New Attribute-Based Syntax
+### Attribute Syntax Examples
 
 #### Generate Pattern (gen)
 ```xml
@@ -103,7 +103,7 @@ The following files enable autocomplete:
 
 To add new elements to autocomplete:
 
-1. Open `spec.xsd`
+1. Open `claudiv.xsd`
 2. Add a new `<xs:element>` definition:
    ```xml
    <xs:element name="your-element">
@@ -124,7 +124,7 @@ To add new elements to autocomplete:
 
 **Autocomplete not working?**
 1. Check that Red Hat XML extension is installed
-2. Verify spec.html has the XML declaration and schema reference
+2. Verify your `.cdml` file is associated with the schema in `.vscode/settings.json`
 3. Restart VS Code
 4. Check the XML language is active (bottom-right status bar should show "XML")
 

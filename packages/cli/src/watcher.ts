@@ -1,5 +1,5 @@
 /**
- * File watcher for spec.html with debouncing and circular trigger prevention
+ * File watcher for .cdml files with debouncing and circular trigger prevention
  */
 
 import chokidar, { type FSWatcher } from 'chokidar';
@@ -36,7 +36,7 @@ export class SpecFileWatcher extends EventEmitter {
       this.config.debounceMs
     );
 
-    // Watch spec.html with chokidar
+    // Watch .cdml file with chokidar
     this.watcher = chokidar.watch(this.config.specFile, {
       ignoreInitial: false, // Process on startup
       awaitWriteFinish: {
