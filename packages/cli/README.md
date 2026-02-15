@@ -315,20 +315,67 @@ spec.html serves as both specification and documentation.
 ## 🛠️ Commands
 
 ```bash
-# Watch mode with dev server (default)
-claudiv
+# Create new project
+claudiv new myapp
+claudiv new myapp --spec paint app with tools
+claudiv new myapp -t python -g
 
-# Generate once (no watching)
-claudiv gen
+# Modify existing project
+claudiv modify myapp --spec make it prettier
+claudiv modify myapp --spec add dark mode support
 
-# Specify file explicitly
-claudiv --file claudiv/app.cdml
+# Generate code
+claudiv gen myapp                    # Headless generation
+claudiv gen myapp --plan             # With planning first
+claudiv gen myapp --no-output        # Preview without writing
 
-# Use API mode
-claudiv --mode api
+# Development mode with hot reload
+claudiv dev myapp                    # Watch mode
+claudiv dev myapp --gen              # Auto-generate on start
+claudiv dev myapp --retry            # Retry generation
+
+# Chat mode
+claudiv dev myapp --chat                      # Multi-turn chat
+claudiv dev myapp --chat "add dark mode"      # Targeted chat
+claudiv gen myapp --chat "refactor nav"       # Chat + generate
 
 # Show help
 claudiv --help
+```
+
+### New in v0.2.0
+
+**`claudiv modify`** - Modify existing projects with natural language:
+```bash
+claudiv modify myapp --spec make it prettier
+claudiv modify paint-app --spec add dark mode support
+```
+
+**`--chat` flag** - Chat-based development:
+```bash
+# Multi-turn interactive chat about your project
+claudiv dev myapp --chat
+
+# Targeted single-turn chat with generation
+claudiv dev myapp --chat "how to add authentication"
+```
+
+**`--plan` flag** - Planning mode with auto-confirmation:
+```bash
+claudiv gen myapp --plan
+claudiv dev myapp --plan
+```
+
+**Interactive prompts** - When you mention AI features without specifying details:
+```bash
+claudiv new txt2img --spec "text to image with ai"
+# Prompts for: AI provider, API key, model selection
+```
+
+**Multi-word `--spec` flag** - No quotes needed:
+```bash
+claudiv new paint-app --spec paint app with brushes and tools
+# Plain text automatically wrapped in proper element
 ```
 
 ## 📦 Generated Artifacts

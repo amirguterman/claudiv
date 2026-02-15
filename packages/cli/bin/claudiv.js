@@ -16,12 +16,12 @@
  */
 
 import { spawn } from 'child_process';
-import { existsSync, writeFileSync, readdirSync } from 'fs';
+import { existsSync, writeFileSync, readFileSync, readdirSync } from 'fs';
 import { join, basename, extname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const VERSION = '0.1.0';
+const VERSION = '0.2.0';
 
 // ─── Parse Arguments ───────────────────────────────────────────
 
@@ -30,10 +30,32 @@ const args = process.argv.slice(2);
 // Parse flags
 const flags = {};
 const positional = [];
+let specMode = false;  // Capture all remaining args after --spec
+let chatMode = false;  // Capture all remaining args after --chat
+
 for (let i = 0; i < args.length; i++) {
   const arg = args[i];
+
+  // If in spec mode, capture all remaining arguments
+  if (specMode) {
+    flags.spec += ' ' + arg;
+    continue;
+  }
+
+  // If in chat mode, capture all remaining arguments
+  if (chatMode) {
+    flags.chat += ' ' + arg;
+    continue;
+  }
+
   if (arg === '-s' || arg === '--spec') {
-    flags.spec = args[++i];
+    specMode = true;
+    flags.spec = '';  // Initialize empty, will collect following args
+  } else if (arg === '--chat') {
+    chatMode = true;
+    flags.chat = '';  // Initialize empty, will collect following args
+  } else if (arg === '--plan') {
+    flags.plan = true;
   } else if (arg === '-g' || arg === '--gen') {
     flags.gen = true;
   } else if (arg === '-t' || arg === '--target') {
@@ -44,6 +66,10 @@ for (let i = 0; i < args.length; i++) {
     flags.watch = true;
   } else if (arg === '-o' || arg === '--output') {
     flags.output = args[++i];
+  } else if (arg === '--retry') {
+    flags.retry = true;
+  } else if (arg === '--no-output') {
+    flags.noOutput = true;
   } else if (arg === '--dry-run') {
     flags.dryRun = true;
   } else if (arg === '-v' || arg === '--version') {
@@ -57,14 +83,28 @@ for (let i = 0; i < args.length; i++) {
   }
 }
 
+// Trim collected content
+if (flags.spec !== undefined) {
+  flags.spec = flags.spec.trim();
+}
+if (flags.chat !== undefined) {
+  flags.chat = flags.chat.trim();
+}
+
 // ─── Route Commands ────────────────────────────────────────────
 
 switch (positional[0]) {
   case 'new':
     cmdNew(positional[1], flags);
     break;
+  case 'modify':
+    cmdModify(positional[1], flags);
+    break;
   case 'gen':
     cmdGen(positional[1], flags);
+    break;
+  case 'dev':
+    cmdDev(positional[1], flags);
     break;
   case 'reverse':
     cmdReverse(positional[1], flags);
@@ -76,13 +116,13 @@ switch (positional[0]) {
     showHelp();
     break;
   case undefined:
-    // No command: look for .cdml in current directory and watch
+    // No command: look for .cdml in current directory and start dev mode
     cmdDefault(flags);
     break;
   default:
     // Check if it's a .cdml file path
     if (positional[0].endsWith('.cdml')) {
-      cmdGen(positional[0], flags);
+      cmdDev(positional[0], flags);
     } else {
       console.error(`Unknown command: ${positional[0]}`);
       console.log('Run "claudiv help" for usage information.');
@@ -121,8 +161,21 @@ function cmdNew(name, flags) {
   let content;
 
   if (flags.spec) {
-    // Use provided spec
-    content = flags.spec;
+    // Check if spec is XML (starts with '<') or plain text
+    const isXML = flags.spec.trim().startsWith('<');
+
+    if (isXML) {
+      // Use provided XML as-is
+      content = flags.spec;
+    } else {
+      // Wrap plain text spec in element
+      const target = flags.target || 'html';
+      const framework = flags.framework ? ` framework="${flags.framework}"` : '';
+      content = `<${baseName} target="${target}"${framework} gen>
+  ${flags.spec}
+</${baseName}>
+`;
+    }
   } else {
     // Generate default template
     const target = flags.target || 'html';
@@ -143,14 +196,77 @@ function cmdNew(name, flags) {
 }
 
 /**
- * claudiv gen <name> [-t|--target <component>] [-w|--watch] [-o|--output <file>]
+ * claudiv modify <name> --spec <modification instructions>
+ *
+ * Modify existing .cdml file with natural language instructions
  *
  * Examples:
- *   claudiv gen myapp                    # generate all from myapp.cdml
+ *   claudiv modify myapp --spec make it prettier
+ *   claudiv modify paint-app --spec add dark mode support
+ *   claudiv modify ui --spec change colors to blue theme
+ */
+function cmdModify(name, flags) {
+  if (!name) {
+    console.error('Usage: claudiv modify <name> --spec <instructions>');
+    console.log('');
+    console.log('Examples:');
+    console.log('  claudiv modify myapp --spec make it prettier');
+    console.log('  claudiv modify paint-app --spec add dark mode support');
+    console.log('  claudiv modify ui --spec change colors to blue theme');
+    process.exit(1);
+  }
+
+  if (!flags.spec || flags.spec.trim() === '') {
+    console.error('Error: --spec is required for modify command');
+    console.log('Specify what modifications to make.');
+    process.exit(1);
+  }
+
+  // Resolve .cdml file
+  const cdmlFile = name.endsWith('.cdml') ? name : `${name}.cdml`;
+  const cdmlPath = join(process.cwd(), cdmlFile);
+
+  if (!existsSync(cdmlPath)) {
+    console.error(`File not found: ${cdmlFile}`);
+    console.log(`Create it first with: claudiv new ${name}`);
+    process.exit(1);
+  }
+
+  // Read existing content
+  const existingContent = readFileSync(cdmlPath, 'utf-8');
+
+  // Append modification as a new element with retry attribute
+  // This triggers regeneration with modification context
+  const modificationElement = `\n<!-- Modification Request -->\n<modify retry>\n  ${flags.spec}\n</modify>`;
+
+  // Find the closing tag of the root element and insert before it
+  const updatedContent = existingContent.replace(/<\/[\w-]+>\s*$/, (match) => {
+    return `${modificationElement}\n${match}`;
+  });
+
+  writeFileSync(cdmlPath, updatedContent, 'utf-8');
+  console.log(`Added modification request to ${cdmlFile}`);
+
+  // Trigger generation in dev mode
+  console.log('Triggering generation...');
+  flags.headless = false;  // Use dev mode for modifications
+  flags.watch = true;
+  flags.autoGen = true;
+  flags.retry = true;
+  startEngine(cdmlPath, flags);
+}
+
+/**
+ * claudiv gen <name> [-t|--target <component>] [-o|--output <file>]
+ *
+ * Generate code headlessly (no dev server, no watch, one-time generation)
+ * Automatically generates ALL elements (no need for gen attributes)
+ *
+ * Examples:
+ *   claudiv gen myapp                    # generate all from myapp.cdml (headless)
  *   claudiv gen myapp -t config          # generate config component only
  *   claudiv gen txt2img -t config        # generate txt2img.config
  *   claudiv gen myapp.cdml               # explicit .cdml path
- *   claudiv gen myapp -w                 # generate + watch for changes
  *   claudiv gen myapp -o output.py       # generate to specific file
  */
 function cmdGen(name, flags) {
@@ -158,10 +274,9 @@ function cmdGen(name, flags) {
     console.error('Usage: claudiv gen <name> [options]');
     console.log('');
     console.log('Examples:');
-    console.log('  claudiv gen myapp');
-    console.log('  claudiv gen myapp -t config');
-    console.log('  claudiv gen myapp -w');
-    console.log('  claudiv gen myapp -o output.py');
+    console.log('  claudiv gen myapp                 # headless generation');
+    console.log('  claudiv gen myapp -t config       # generate specific target');
+    console.log('  claudiv gen myapp -o output.py    # custom output file');
     process.exit(1);
   }
 
@@ -175,11 +290,60 @@ function cmdGen(name, flags) {
     process.exit(1);
   }
 
-  // If -t flag, it selects a component/target within the .cdml
-  if (flags.target) {
-    console.log(`Generating "${flags.target}" from ${cdmlFile}...`);
-  } else {
-    console.log(`Generating from ${cdmlFile}...`);
+  console.log(`Generating all from ${cdmlFile} (headless mode)...`);
+
+  // Set headless mode flags
+  flags.headless = true;  // No dev server
+  flags.autoGen = true;   // Auto-generate all elements
+  flags.watch = false;    // No watch mode
+
+  startEngine(cdmlPath, flags);
+}
+
+/**
+ * claudiv dev <name> [--gen|--retry] [--no-output]
+ *
+ * Start dev server with HMR and watch mode
+ * Optionally generate on start with --gen or --retry flags
+ *
+ * Examples:
+ *   claudiv dev myapp                    # dev server + watch (no auto-gen)
+ *   claudiv dev myapp --gen              # dev server + watch + auto-generate on start
+ *   claudiv dev myapp --retry            # dev server + watch + retry generation
+ *   claudiv dev myapp --no-output        # dev server but don't write output files
+ */
+function cmdDev(name, flags) {
+  if (!name) {
+    console.error('Usage: claudiv dev <name> [options]');
+    console.log('');
+    console.log('Examples:');
+    console.log('  claudiv dev myapp                 # dev server + watch');
+    console.log('  claudiv dev myapp --gen           # dev server + auto-generate');
+    console.log('  claudiv dev myapp --retry         # dev server + retry');
+    console.log('  claudiv dev myapp --no-output     # dev server without writing files');
+    process.exit(1);
+  }
+
+  // Resolve .cdml file
+  const cdmlFile = name.endsWith('.cdml') ? name : `${name}.cdml`;
+  const cdmlPath = join(process.cwd(), cdmlFile);
+
+  if (!existsSync(cdmlPath)) {
+    console.error(`File not found: ${cdmlFile}`);
+    console.log(`Create it with: claudiv new ${name}`);
+    process.exit(1);
+  }
+
+  console.log(`Starting dev server for ${cdmlFile}...`);
+
+  // Set dev mode flags
+  flags.headless = false;  // Enable dev server
+  flags.watch = true;      // Enable watch mode
+
+  // Auto-generate on start if --gen or --retry flags are present
+  if (flags.gen || flags.retry) {
+    flags.autoGen = true;
+    console.log(`Will ${flags.retry ? 'retry' : 'generate'} on start`);
   }
 
   startEngine(cdmlPath, flags);
@@ -283,9 +447,16 @@ function startEngine(cdmlPath, flags) {
   const mode = process.env.MODE || 'cli';
   const envVars = { ...process.env, MODE: mode };
 
+  // Pass flags as environment variables
   if (flags.target) envVars.CLAUDIV_TARGET = flags.target;
   if (flags.output) envVars.CLAUDIV_OUTPUT = flags.output;
   if (flags.watch) envVars.CLAUDIV_WATCH = '1';
+  if (flags.headless) envVars.CLAUDIV_HEADLESS = '1';
+  if (flags.autoGen) envVars.CLAUDIV_AUTO_GEN = '1';
+  if (flags.retry) envVars.CLAUDIV_RETRY = '1';
+  if (flags.noOutput) envVars.CLAUDIV_NO_OUTPUT = '1';
+  if (flags.plan) envVars.CLAUDIV_PLAN = '1';
+  if (flags.chat !== undefined) envVars.CLAUDIV_CHAT = flags.chat || 'multi-turn';
 
   const editor = spawn('node', [join(__dirname, '../dist/index.js'), cdmlPath], {
     stdio: 'inherit',
@@ -316,48 +487,63 @@ USAGE
 
 COMMANDS
   new <name>       Create a new .cdml file
-  gen <name>       Generate code from .cdml file
+  modify <name>    Modify existing .cdml file with natural language
+  gen <name>       Generate code (headless mode, auto-generates all)
+  dev <name>       Start dev server with HMR (watch mode)
   reverse <file>   Reverse-engineer existing file to .cdml
   watch <name>     Watch .cdml file and regenerate on changes
   help             Show this help message
 
 OPTIONS
-  -s, --spec <xml>      Inline .cdml content for 'new' command
-  -g, --gen             Immediately generate after 'new'
-  -t, --target <name>   Target component or language
-  -f, --framework <fw>  Framework (fastapi, express, nextjs, etc.)
-  -o, --output <file>   Output file path
-  -w, --watch           Watch mode (regenerate on save)
-  --dry-run             Preview without writing files
-  -v, --version         Show version
-  -h, --help            Show help
+  -s, --spec <content>   Inline specification (MUST be last flag for multi-word)
+  -g, --gen              Immediately generate after 'new'
+  -t, --target <lang>    Target language (html, python, bash, etc.)
+  -f, --framework <name> Framework (fastapi, express, nextjs, etc.)
+  -o, --output <file>    Output file path
+  --plan                 Use planning mode with auto-confirmation
+  --chat [subject]       Chat mode (empty = multi-turn, with text = targeted)
+  --retry                Retry generation (use with dev command)
+  --no-output            Generate but don't write output files
+  -v, --version          Show version
+  -h, --help             Show help
 
 EXAMPLES
 
-  Getting Started:
+  Create & Modify:
     claudiv new myapp                              Create myapp.cdml
     claudiv new myapp -t python                    Create Python project spec
-    claudiv new myapp -g                           Create and generate immediately
-
-  Inline Spec:
-    claudiv new txt2img -s '<txt2img lang="python" type="cli" gen="">
-      <ai provider="openai" />
-      <config apikey organizationid />
-      <args input="text|file, size" output="filename, format" />
-    </txt2img>'
-
-    claudiv new txt2img -s '<txt2img lang="python" type="cli" gen="">
-      <ai provider="openai" />
-      <config apikey organizationid />
-      <args input="text|file, size" output="filename, format" />
-    </txt2img>' -g                                 Create + generate immediately
+    claudiv new paint-app --spec paint app with tools
+    claudiv modify myapp --spec make it prettier
+    claudiv modify paint-app --spec add dark mode support
 
   Generate:
-    claudiv gen myapp                              Generate all from myapp.cdml
-    claudiv gen myapp.cdml                         Explicit .cdml path
-    claudiv gen txt2img -t config                  Generate only config component
-    claudiv gen myapp -w                           Watch mode
-    claudiv gen myapp -o output.py                 Custom output file
+    claudiv gen myapp                              Headless generation (auto-gen all)
+    claudiv gen myapp --plan                       With planning first
+    claudiv gen myapp --no-output                  Preview without writing files
+    claudiv dev myapp                              Dev server + watch
+    claudiv dev myapp --gen                        Dev + auto-generate on start
+    claudiv dev myapp --retry                      Dev + retry generation
+
+  Chat Mode:
+    claudiv dev myapp --chat                       Multi-turn chat session
+    claudiv dev myapp --chat "add dark mode"       Targeted chat + generate
+    claudiv gen myapp --chat "refactor navigation" Chat + generate
+
+  Inline Specifications (--spec MUST be last flag):
+    claudiv new paint-app --spec paint app with brushes and tools
+    claudiv new ui --spec menu=panel(dock: left) features: [undo save]
+    claudiv new api -t python --spec REST API with users endpoints
+
+  Quoted XML Specifications:
+    claudiv new myapp --spec '<button gen>Click me</button>'
+    claudiv new txt2img --spec '<txt2img lang="python" type="cli" gen="">
+      <ai provider="openai" />
+      <config apikey organizationid />
+    </txt2img>' -g
+
+  Interactive Prompts:
+    claudiv new txt2img --spec "text to image with ai"
+    # CLI will prompt for: AI provider, API key, model selection
 
   Component Target (-t):
     claudiv gen txt2img -t config                  Generates txt2img.config
@@ -367,16 +553,12 @@ EXAMPLES
   Reverse Engineering:
     claudiv reverse api.py                         → api.cdml
     claudiv reverse Button.tsx                     → Button.cdml
-    claudiv reverse backup.sh                      → backup.cdml
-    claudiv reverse styles.css                     → styles.cdml
     claudiv reverse api.py -o spec.cdml            Custom output name
-
-  Watch Mode:
-    claudiv watch myapp                            Watch myapp.cdml for changes
-    claudiv gen myapp -w                           Same as above
 
   Run in Empty Folder:
     npx @claudiv/cli new myapp -t python -g
+    npm install -g @claudiv/cli                    Install globally
+    claudiv new myapp                              Use without npx
 
 FILE FORMAT
   Input:   <name>.cdml

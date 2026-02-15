@@ -15,12 +15,29 @@ import { updateSpecWithResponse } from './updater.js';
 import { DevServer } from './dev-server.js';
 import * as cheerio from 'cheerio';
 import type { Element, AnyNode } from 'domhandler';
+import { startChatSession, startTargetedChat } from './chat.js';
 
 /**
  * Main application entry point
  */
 async function main() {
-  logger.info('🚀 GUI-driven spec editor starting...');
+  // Check mode flags
+  const isHeadless = process.env.CLAUDIV_HEADLESS === '1';
+  const autoGen = process.env.CLAUDIV_AUTO_GEN === '1';
+  const isRetry = process.env.CLAUDIV_RETRY === '1';
+  const noOutput = process.env.CLAUDIV_NO_OUTPUT === '1';
+  const isPlanMode = process.env.CLAUDIV_PLAN === '1';
+  const chatMode = process.env.CLAUDIV_CHAT;
+
+  if (isHeadless) {
+    logger.info('🚀 Claudiv - Headless generation mode');
+  } else {
+    logger.info('🚀 Claudiv - Dev server mode');
+  }
+
+  if (isPlanMode) {
+    logger.info('📋 Plan mode enabled - will create implementation plan first');
+  }
 
   // Load configuration
   const config = loadConfig();
@@ -31,17 +48,83 @@ async function main() {
   // Verify Claude is available
   await verifyClaudeAvailable(claudeClient, config.mode);
 
-  // TODO: Implement regeneration for multi-file .cdml architecture
-  // (spec.cdml, rules.cdml, models.cdml, tests.cdml)
-  // For now, generation happens on-demand through chat patterns
+  // CHAT MODE: Handle chat modes before normal flow
+  if (chatMode !== undefined) {
+    if (chatMode === 'multi-turn' || chatMode === '') {
+      // Multi-turn chat mode
+      logger.info('💬 Starting multi-turn chat session...');
+      await startChatSession(config.specFile, claudeClient, config);
+      // After chat ends, user can optionally trigger generation
+      // For now, just exit
+      logger.info('Chat session ended');
+      process.exit(0);
+    } else {
+      // Targeted chat mode with subject
+      logger.info(`💬 Starting targeted chat: "${chatMode}"`);
+      await startTargetedChat(config.specFile, chatMode, claudeClient, config);
+      // After targeted chat, continue to generation if there was code
+      logger.info('Targeted chat complete');
+      process.exit(0);
+    }
+  }
 
+  // HEADLESS MODE (gen command): Generate once and exit
+  if (isHeadless) {
+    logger.info(`Generating all from ${config.specFile.split('/').pop()}...`);
+
+    // Read and process file once
+    const content = await readFile(config.specFile, 'utf-8');
+    const parsed = parseSpecFile(content);
+
+    // Auto-generate all elements (treat as if they all have gen attribute)
+    if (autoGen) {
+      logger.info('Auto-generating all elements...');
+      // Add gen attribute to root element temporarily
+      const rootElement = parsed.dom('*').first();
+      if (rootElement.length > 0) {
+        rootElement.attr(isRetry ? 'retry' : 'gen', '');
+        // Re-parse to detect the pattern
+        const reparsed = parseSpecFile(parsed.dom.html());
+        if (reparsed.chatPatterns.length > 0) {
+          await processChatPattern(reparsed.chatPatterns[0], config, claudeClient, null, reparsed.dom, null, noOutput);
+        }
+      }
+    } else {
+      // Process only elements with gen/retry/undo attributes
+      if (parsed.chatPatterns.length === 0) {
+        logger.warn('No elements with gen/retry/undo attributes found');
+        logger.info('Tip: Run with "claudiv gen" to auto-generate all elements');
+        process.exit(0);
+      }
+
+      for (const pattern of parsed.chatPatterns) {
+        await processChatPattern(pattern, config, claudeClient, null as any, parsed.dom, null as any, noOutput);
+      }
+    }
+
+    logger.success('✓ Generation complete!');
+    process.exit(0);
+  }
+
+  // DEV MODE (dev command): Start dev server and watch
   // Create file watcher
   const watcher = new SpecFileWatcher(config);
+
+  // Start Vite dev server
+  const devServer = new DevServer();
+  await devServer.start();
+  logger.info('');
+
+  // Auto-generate on start if --gen or --retry flags
+  if (autoGen) {
+    logger.info(`Auto-generating on start (${isRetry ? 'retry' : 'gen'} mode)...`);
+    await processSpecFile(config.specFile, config, claudeClient, watcher, devServer, noOutput);
+  }
 
   // Handle file changes
   watcher.on('change', async (filePath: string) => {
     try {
-      await processSpecFile(filePath, config, claudeClient, watcher);
+      await processSpecFile(filePath, config, claudeClient, watcher, devServer, noOutput);
     } catch (error) {
       const err = error as Error;
       logger.error(`Error processing ${filePath}: ${err.message}`);
@@ -58,11 +141,6 @@ async function main() {
   logger.info('💡 Tip: Add gen/retry/undo attribute to any element to trigger AI');
   logger.info('💡 Example: <create-button gen>Make a blue button</create-button>');
   logger.info('💡 Example: <my-button color="blue" size="large" gen />');
-  logger.info('');
-
-  // Start Vite dev server
-  const devServer = new DevServer();
-  await devServer.start();
   logger.info('');
 
   // Handle graceful shutdown
@@ -84,10 +162,12 @@ async function processSpecFile(
   filePath: string,
   config: any,
   claudeClient: any,
-  watcher: SpecFileWatcher
+  watcher: SpecFileWatcher | null,
+  devServer: DevServer | null,
+  noOutput: boolean = false
 ): Promise<void> {
-  // Skip if we're updating the file ourselves
-  if (watcher.isCurrentlyUpdating()) {
+  // Skip if we're updating the file ourselves (only in watch mode)
+  if (watcher && watcher.isCurrentlyUpdating()) {
     logger.debug('Skipping processing (internal update in progress)');
     return;
   }
@@ -109,7 +189,7 @@ async function processSpecFile(
 
   // Process each chat pattern
   for (const pattern of parsed.chatPatterns) {
-    await processChatPattern(pattern, config, claudeClient, watcher, parsed.dom);
+    await processChatPattern(pattern, config, claudeClient, watcher, parsed.dom, devServer, noOutput);
   }
 }
 
@@ -120,8 +200,10 @@ async function processChatPattern(
   pattern: ChatPattern,
   config: any,
   claudeClient: any,
-  watcher: SpecFileWatcher,
-  $: any
+  watcher: SpecFileWatcher | null,
+  $: any,
+  devServer: DevServer | null,
+  noOutput: boolean = false
 ): Promise<void> {
   const { action, element, elementName, specAttributes, userMessage, context, elementPath } = pattern;
 
@@ -169,30 +251,29 @@ async function processChatPattern(
     let fullResponse = '';
 
     // Send to Claude and stream response
+    logger.info('Claude response:');
     for await (const chunk of claudeClient.sendPrompt(fullPrompt, context)) {
       fullResponse += chunk;
-      // Optionally: show progress
-      if (process.env.DEBUG) {
-        process.stdout.write('.');
-      }
+      // Stream output to console so user can see progress
+      process.stdout.write(chunk);
     }
 
-    if (process.env.DEBUG) {
-      process.stdout.write('\n');
-    }
-
-    logger.success('Received response from Claude');
+    process.stdout.write('\n\n');
+    logger.success('✓ Response complete');
 
     // Check if response contains code blocks
     const codeBlocks = extractCodeBlocks(fullResponse);
     const hasCode = codeBlocks.length > 0;
 
     // Generate code file using universal generator (if there's code)
-    if (hasCode) {
+    let outputFileName: string | undefined;
+
+    if (hasCode && !noOutput) {
       const generated = await generateCode(fullResponse, pattern, context);
 
       // Determine output file path
       const outputFile = config.specFile.replace('.cdml', generated.fileExtension);
+      outputFileName = outputFile.split('/').pop();
 
       // Write generated code
       await writeFile(outputFile, generated.code, 'utf-8');
@@ -204,14 +285,24 @@ async function processChatPattern(
       }
 
       logger.success(`Generated ${pattern.target} code → ${outputFile}`);
+
+      // Set output file on dev server and open in browser (for HTML files, dev mode only)
+      if (devServer && outputFileName && generated.fileExtension === '.html') {
+        devServer.setOutputFile(outputFileName);
+        await devServer.openInBrowser(outputFileName);
+      }
+    } else if (hasCode && noOutput) {
+      logger.info('Code generated but not written (--no-output mode)');
     }
 
-    // Update spec.html: remove action attribute and add <ai> child with response
-    watcher.setUpdating(true);
-    try {
-      await updateSpecWithResponse($, element, action, fullResponse, config.specFile, hasCode);
-    } finally {
-      watcher.setUpdating(false);
+    // Update spec.html: remove action attribute and add <ai> child with response (watch mode only)
+    if (watcher) {
+      watcher.setUpdating(true);
+      try {
+        await updateSpecWithResponse($, element, action, fullResponse, config.specFile, hasCode, outputFileName);
+      } finally {
+        watcher.setUpdating(false);
+      }
     }
 
   } catch (error) {
