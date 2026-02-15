@@ -57,3 +57,6 @@ pnpm-lock.yaml
 
 # Claude Code project context
 .claude/projects/
+
+# Demo generation repo (separate git repo)
+.demos/
