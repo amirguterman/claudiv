@@ -169,7 +169,7 @@ export function extractConstraints($: CheerioAPI): ConstraintDefinition | null {
   constraintsEl.find('ram, cpu, memory, disk').each((_, el) => {
     const resEl = el as Element;
     for (const [key, value] of Object.entries(resEl.attribs || {})) {
-      resources[`${resEl.name}.${key}`] = value;
+      resources[`${resEl.name}.${key}`] = String(value);
     }
   });
 
@@ -214,7 +214,7 @@ export function extractDependencies($: CheerioAPI): DependencyDefinition[] {
     if (!fqnStr) return;
 
     const facets = depEl.attribs?.facet
-      ? depEl.attribs.facet.split(',').map((f) => f.trim())
+      ? String(depEl.attribs.facet).split(',').map((f: string) => f.trim())
       : undefined;
 
     deps.push({
@@ -312,7 +312,7 @@ function extractConfig(el: Element): Record<string, string> | undefined {
 
   for (const [key, value] of Object.entries(el.attribs || {})) {
     if (!skipKeys.includes(key)) {
-      config[key] = value;
+      config[key] = String(value);
     }
   }
 

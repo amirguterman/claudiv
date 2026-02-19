@@ -154,7 +154,7 @@ function mergeElement(
   if (baseMatch.length > 0) {
     // Merge attributes (override wins)
     for (const [key, value] of Object.entries(overrideAttrs)) {
-      baseMatch.attr(key, value);
+      baseMatch.attr(key, String(value));
     }
 
     // Recursively merge children

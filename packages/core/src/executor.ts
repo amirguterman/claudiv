@@ -156,6 +156,6 @@ async function executeApi(prompt: string, config: ExecutorConfig): Promise<strin
   });
 
   // Extract text from response
-  const textBlocks = message.content.filter((b) => b.type === 'text');
-  return textBlocks.map((b) => (b as any).text).join('\n');
+  const textBlocks = message.content.filter((b: { type: string }) => b.type === 'text');
+  return textBlocks.map((b: any) => b.text).join('\n');
 }

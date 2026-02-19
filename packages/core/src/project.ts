@@ -275,7 +275,7 @@ function extractDependenciesFromDom($: cheerio.CheerioAPI) {
     const fqnStr = depEl.attribs?.fqn;
     if (!fqnStr) return;
 
-    const facets = depEl.attribs?.facet?.split(',').map((f) => f.trim());
+    const facets = depEl.attribs?.facet ? String(depEl.attribs.facet).split(',').map((f: string) => f.trim()) : undefined;
     const usage = depEl.attribs?.usage;
 
     deps.push({
