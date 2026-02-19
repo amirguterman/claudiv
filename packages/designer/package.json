@@ -2,7 +2,6 @@
   "name": "@claudiv/designer",
   "version": "0.3.0",
   "type": "module",
-  "private": true,
   "scripts": {
     "dev": "concurrently \"tsx watch server/index.ts\" \"vite\"",
     "build": "vite build && tsc -p tsconfig.node.json",
