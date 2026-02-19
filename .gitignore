@@ -17,6 +17,7 @@ dist/
 # Pattern: <name>.cdml generates <name>.html
 apps/**/*.html
 packages/**/*.html
+!packages/designer/index.html
 
 # Generated artifacts
 *.rules.html
