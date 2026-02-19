@@ -1,49 +1,33 @@
 # Claudiv Documentation
 
-> **Universal Declarative Generation Platform** — From Anything to Anything, Through Natural Language.
-
-Write `.cdml` files with freeform tags. Add `gen` to trigger AI generation. Get working code in any language.
-
-```xml
-<app target="html">
-  <hero-section gen>
-    Modern landing page with gradient hero, features grid, and contact form
-  </hero-section>
-</app>
-```
-
-```bash
-claudiv gen app    # → generates app.html
-```
+> Declarative AI Interaction Platform -- Interface-first components with diff-based change detection.
 
 ## Guides
 
-- **[Features Summary](FEATURES-SUMMARY.md)** — Complete feature overview and workflow
-- **[Attribute Syntax](ATTRIBUTE-SYNTAX.md)** — Full syntax reference (`gen`, `retry`, `undo`, `lock`, `unlock`)
-- **[Lock/Unlock Guide](LOCK-UNLOCK-GUIDE.md)** — Selective regeneration patterns
-- **[Schema Guide](SCHEMA-GUIDE.md)** — IDE autocomplete setup with XML Schema
+- **[CDML Syntax Reference](ATTRIBUTE-SYNTAX.md)** -- Component structure, FQN grammar, plan directives, aspects, environment cascade
+- **[Features Summary](FEATURES-SUMMARY.md)** -- Complete v0.3.0 feature overview
 
 ## Quick Reference
 
-### Action Attributes
-
-| Attribute | Purpose |
-|-----------|---------|
-| `gen` | Generate new implementation |
-| `retry` | Regenerate (not satisfied) |
-| `undo` | Revert to previous version |
-| `lock` | Protect children from regeneration |
-| `unlock` | Override parent lock |
+### Component Structure
+```xml
+<component name="..." fqn="...">
+  <interface> ... </interface>
+  <constraints> ... </constraints>
+  <requires> ... </requires>
+  <implementation> ... </implementation>
+</component>
+```
 
 ### CLI Commands
-
-```bash
-claudiv new <name>       # Create a new .cdml file
-claudiv gen <name>       # Generate code from .cdml
-claudiv reverse <file>   # Reverse-engineer file → .cdml
-claudiv watch <name>     # Watch and regenerate on changes
+```
+claudiv new vite <name>      Scaffold Vite project
+claudiv new system <name>    Create system project
+claudiv dev [file]           Watch and process changes
+claudiv gen [file]           One-shot generation
+claudiv init                 Initialize in existing project
 ```
 
 ## More
 
-See the main [README](../README.md) for installation, architecture, and full examples.
+See the main [README](../README.md) for installation, architecture, and getting started.

@@ -1,14 +1,15 @@
 /**
- * @claudiv/vite-sdk - Vite plugin for Claudiv integration
+ * @claudiv/vite-sdk — Vite framework SDK for Claudiv.
  *
- * Enables Claudiv generation in Vite projects with HMR support.
+ * Add-on package providing `claudiv:*` npm scripts for Vite projects.
+ * Implements ClaudivSDK interface for Vite-specific integration.
  */
 
-// Main plugin export
-export { claudiv, claudivPlugin } from './plugin.js';
-
-// Types
-export type { ClaudivPluginOptions } from './types.js';
-
-// Utilities (for advanced usage)
-export { ClaudivViteWatcher } from './watcher.js';
+export { ViteSdk } from './sdk.js';
+export { ViteDetector } from './detector.js';
+export { initViteProject } from './init.js';
+export { runDev } from './dev-runner.js';
+export { runGen } from './gen-runner.js';
+export { selectMode } from './mode-selector.js';
+export { CdmlCache } from './cache.js';
+export { addScripts, removeScripts } from './package-json.js';
