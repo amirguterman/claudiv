@@ -24,6 +24,7 @@
     "@claudiv/core": "workspace:*",
     "cheerio": "^1.0.0",
     "chokidar": "^5.0.0",
+    "domhandler": "^5.0.0",
     "htmlparser2": "^9.1.0"
   },
   "devDependencies": {
