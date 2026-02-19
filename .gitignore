@@ -50,7 +50,6 @@ Thumbs.db
 .turbo
 
 # pnpm
-pnpm-lock.yaml
 
 # TypeScript
 *.tsbuildinfo
