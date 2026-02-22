@@ -55,7 +55,7 @@ export interface InitResult {
 
 export interface DevOptions {
   /** Claude execution mode */
-  mode?: 'cli' | 'api';
+  mode?: 'sdk' | 'api';
 
   /** API key for API mode */
   apiKey?: string;
@@ -69,7 +69,7 @@ export interface DevOptions {
 
 export interface GenOptions {
   /** Claude execution mode */
-  mode?: 'cli' | 'api';
+  mode?: 'sdk' | 'api';
 
   /** API key for API mode */
   apiKey?: string;

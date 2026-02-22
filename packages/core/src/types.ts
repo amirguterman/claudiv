@@ -221,7 +221,7 @@ export interface SystemState {
 }
 
 export interface Config {
-  mode: 'cli' | 'api';
+  mode: 'sdk' | 'api';
   apiKey?: string;
   specFile: string;
   debounceMs: number;

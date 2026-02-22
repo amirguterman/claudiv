@@ -5,11 +5,11 @@
  * prompt overhead. The assembled prompt IS the complete context.
  *
  * Supports two modes:
- * - CLI: `claude --print` (zero built-in context)
+ * - SDK: Claude Agent SDK `query()` with multi-turn thinking and sub-agents
  * - API: Direct Anthropic API call
  */
 
-import { spawn } from 'child_process';
+import { query } from '@anthropic-ai/claude-agent-sdk';
 import type { AssembledPrompt } from './types.js';
 
 export interface ExecutionResult {
@@ -28,7 +28,7 @@ export interface ExecutionResult {
 
 export interface ExecutorConfig {
   /** Execution mode */
-  mode: 'cli' | 'api';
+  mode: 'sdk' | 'api';
 
   /** API key (for API mode) */
   apiKey?: string;
@@ -43,6 +43,33 @@ export interface ExecutorConfig {
   maxTokens?: number;
 }
 
+const SYSTEM_PROMPT = `You are a code generation assistant for the Claudiv platform.
+
+Follow the instructions in the prompt exactly. You may read files and explore the codebase to inform your response.
+
+Do NOT ask questions as free text. If you need user input before you can proceed, output a <plan:questions> block using this syntax:
+
+<plan:questions>
+  <select question="Which approach?">
+    <a>Option A</a>
+    <b>Option B</b>
+    <answer></answer>
+  </select>
+  <multiselect question="Which features?">
+    <a>Feature 1</a>
+    <b>Feature 2</b>
+    <answer></answer>
+  </multiselect>
+  <yesno question="Enable X?"><answer></answer></yesno>
+  <value question="What name?"><answer></answer></value>
+  <input question="Describe the behavior?"><answer></answer></input>
+</plan:questions>
+
+Question types: select (single choice), multiselect (multiple), yesno (boolean), value (short text), input (long text).
+Options use single-letter tags: <a>, <b>, <c>, etc.
+
+Return CDML elements or <plan:questions> only — no explanatory prose.`;
+
 /**
  * Execute a headless Claude invocation with the assembled prompt.
  */
@@ -55,8 +82,8 @@ export async function executeClaudeHeadless(
   try {
     let response: string;
 
-    if (config.mode === 'cli') {
-      response = await executeCli(assembled.prompt, config);
+    if (config.mode === 'sdk') {
+      response = await executeSdk(assembled.prompt, config);
     } else {
       response = await executeApi(assembled.prompt, config);
     }
@@ -76,60 +103,42 @@ export async function executeClaudeHeadless(
   }
 }
 
-// ─── CLI Mode ───────────────────────────────────────────────────
+// ─── SDK Mode ───────────────────────────────────────────────────
 
-async function executeCli(prompt: string, config: ExecutorConfig): Promise<string> {
-  const args = ['--print'];
+/** Read-only tools for codebase exploration + sub-agents */
+const SDK_ALLOWED_TOOLS = ['Read', 'Glob', 'Grep', 'Task'];
 
-  if (config.model) {
-    args.push('--model', config.model);
-  }
+async function executeSdk(prompt: string, config: ExecutorConfig): Promise<string> {
+  const abortController = new AbortController();
+  const timeout = config.timeoutMs || 300_000;
+  const timer = setTimeout(() => abortController.abort(), timeout);
 
-  if (config.maxTokens) {
-    args.push('--max-tokens', String(config.maxTokens));
-  }
-
-  // Pass prompt via stdin
-  args.push('-p', prompt);
-
-  return new Promise((resolve, reject) => {
-    const timeout = config.timeoutMs || 120_000;
-
-    const proc = spawn('claude', args, {
-      stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env },
+  try {
+    const conversation = query({
+      prompt,
+      options: {
+        abortController,
+        model: config.model,
+        allowedTools: SDK_ALLOWED_TOOLS,
+        systemPrompt: SYSTEM_PROMPT,
+        cwd: process.cwd(),
+      },
     });
 
-    let stdout = '';
-    let stderr = '';
-
-    proc.stdout.on('data', (data: Buffer) => {
-      stdout += data.toString();
-    });
-
-    proc.stderr.on('data', (data: Buffer) => {
-      stderr += data.toString();
-    });
-
-    const timer = setTimeout(() => {
-      proc.kill('SIGTERM');
-      reject(new Error(`Claude CLI timed out after ${timeout}ms`));
-    }, timeout);
-
-    proc.on('close', (code) => {
-      clearTimeout(timer);
-      if (code === 0) {
-        resolve(stdout);
-      } else {
-        reject(new Error(`Claude CLI exited with code ${code}: ${stderr}`));
+    for await (const message of conversation) {
+      if (message.type === 'result') {
+        if (message.subtype === 'success') {
+          return message.result;
+        }
+        const errors = 'errors' in message ? (message as any).errors.join('; ') : message.subtype;
+        throw new Error(`Claude SDK error: ${errors}`);
       }
-    });
+    }
 
-    proc.on('error', (err) => {
-      clearTimeout(timer);
-      reject(new Error(`Failed to spawn claude CLI: ${err.message}`));
-    });
-  });
+    throw new Error('No result received from Claude Agent SDK');
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // ─── API Mode ───────────────────────────────────────────────────

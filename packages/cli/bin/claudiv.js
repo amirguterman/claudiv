@@ -255,7 +255,7 @@ function cmdNewSystem(name, flags) {
 </claudiv-context>
 `;
   writeFileSync(join(claudivDir, 'context.cdml'), contextCdml, 'utf-8');
-  writeFileSync(join(claudivDir, 'config.json'), JSON.stringify({ mode: 'cli' }, null, 2), 'utf-8');
+  writeFileSync(join(claudivDir, 'config.json'), JSON.stringify({ mode: 'sdk' }, null, 2), 'utf-8');
 
   // 5. Generate .gitignore
   writeFileSync(join(targetDir, '.gitignore'), `.claudiv/config.json
@@ -291,7 +291,8 @@ function cmdDesigner(flags) {
   // Try to find the designer package
   const designerPaths = [
     join(__dirname, '../../designer'),           // monorepo sibling
-    join(__dirname, '../node_modules/@claudiv/designer'), // installed dep
+    join(__dirname, '../node_modules/@claudiv/designer'), // installed as cli dep
+    join(process.cwd(), 'node_modules/@claudiv/designer'), // installed in user project
   ];
 
   let designerRoot = null;
@@ -304,7 +305,7 @@ function cmdDesigner(flags) {
 
   if (!designerRoot) {
     console.error('Designer package not found.');
-    console.log('Install it: pnpm add @claudiv/designer');
+    console.log('Install it: npm install @claudiv/designer');
     process.exit(1);
   }
 
@@ -528,6 +529,6 @@ FILE FORMAT
   Context:       .claudiv/context.cdml — reference mapping (auto-generated)
 
 MORE INFO
-  https://github.com/claudiv-ai/claudiv
+  https://github.com/claudiv-ai/cli
 `);
 }
